@@ -1,0 +1,41 @@
+{
+    "name": "fivestones/laravel-gmp-report-jobs",
+    "description": "Runs GMP reports in Laravel queue asynchronously and dispatch a new job to process the downloaded report.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Peter Lam",
+            "email": "peter@fivestones.net",
+            "role": "Solution Engineer"
+        }
+    ],
+    "require": {
+        "google/apiclient": "^2.0",
+        "google/cloud-core": "^1.37"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^4.0",
+        "phpunit/phpunit": "^9.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "FiveStones\\GmpReporting\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+          "FiveStones\\GmpReporting\\Tests\\": "tests"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "FiveStones\\GmpReporting\\GmpReportingServiceProvider"
+            ],
+            "aliases": {
+                "Dv360Sdf": "FiveStones\\GmpReporting\\Facades\\Dv360Sdf"
+            }
+        }
+    }
+}
