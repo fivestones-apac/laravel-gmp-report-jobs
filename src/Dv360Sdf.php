@@ -79,7 +79,7 @@ class Dv360Sdf
         $this->dispatchAwait(new Dv360SdfAwait(
             $this->operation,
             // defined in Concerns\HasGoogleClient
-            $this->googleClient,
+            $this->googleClient->getAccessToken(),
             $this->googleApiTokenModel,
             $this->googleApiTokenModelGetClientMethod,
             $this->googleApiTokenModelUpdateTokenMethod,

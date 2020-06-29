@@ -8,9 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 trait HasGoogleClient
 {
     /**
-     * @var  Google_Client
+     * @var  \Google_Client
      */
     protected $googleClient;
+
+    /**
+     * @var  array
+     */
+    protected $googleClientAccessToken;
 
     /**
      * If the API token is stored in an Eloquent model, this trait accepts the model
@@ -56,6 +61,9 @@ trait HasGoogleClient
         ) {
             $this->googleApiTokenModel = $this->googleApiTokenModel->fresh();
             $this->googleClient = $this->googleApiTokenModel->{$this->googleApiTokenModelGetClientMethod}();
+        } else if (is_array($this->googleClientAccessToken)) {
+            $this->googleClient = new Google_Client;
+            $this->googleClient->setAccessToken($this->googleClientAccessToken);
         }
 
         // obtain a fresh access token if the existing one is expired

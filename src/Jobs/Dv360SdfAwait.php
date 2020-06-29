@@ -58,7 +58,7 @@ class Dv360SdfAwait implements ShouldQueue
     public function __construct(
         Google_Service_DisplayVideo_Operation $operation,
         // defined in Concerns\HasGoogleClient
-        ?Google_Client $googleClient,
+        ?array $googleClientAccessToken,
         ?Model $googleApiTokenModel,
         ?string $googleApiTokenModelGetClientMethod,
         ?string $googleApiTokenModelUpdateTokenMethod,
@@ -68,7 +68,7 @@ class Dv360SdfAwait implements ShouldQueue
         string $resultJobQueue
     ) {
         $this->operation = $operation;
-        $this->googleClient = $googleClient;
+        $this->googleClientAccessToken = $googleClientAccessToken;
         $this->googleApiTokenModel = $googleApiTokenModel;
         $this->googleApiTokenModelGetClientMethod = $googleApiTokenModelGetClientMethod;
         $this->googleApiTokenModelUpdateTokenMethod = $googleApiTokenModelUpdateTokenMethod;
