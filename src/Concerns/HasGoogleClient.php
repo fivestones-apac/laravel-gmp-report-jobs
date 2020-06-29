@@ -52,10 +52,10 @@ trait HasGoogleClient
         // obtain initialized client from model if class and method name are provded
         if (
             $this->googleApiTokenModel instanceof Model &&
-            method_exists($this->googleApiTokenModel, $this->methodToGetClient)
+            method_exists($this->googleApiTokenModel, $this->googleApiTokenModelGetClientMethod)
         ) {
             $this->googleApiTokenModel = $this->googleApiTokenModel->fresh();
-            $this->googleClient = $this->googleApiTokenModel->{$this->methodToGetClient}();
+            $this->googleClient = $this->googleApiTokenModel->{$this->googleApiTokenModelGetClientMethod}();
         }
 
         // obtain a fresh access token if the existing one is expired
