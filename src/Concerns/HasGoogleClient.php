@@ -122,7 +122,7 @@ trait HasGoogleClient
      * @param  string $method
      * @return object
      */
-    public function setGoogleApiTokenModelUpdateTokenMethod(Model $method): self
+    public function setGoogleApiTokenModelUpdateTokenMethod(string $method): self
     {
         $this->googleApiTokenModelUpdateTokenMethod = $method;
 
