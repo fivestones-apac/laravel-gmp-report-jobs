@@ -129,7 +129,7 @@ class Dv360Sdf
         $destinationPath = tempnam(sys_get_temp_dir(), class_basename(self::class));
         $destinationResource = fopen($destinationPath, 'w');
 
-        // use stream copy to save the report in our GCS bucket
+        // copy between stream for better performance
         stream_copy_to_stream($sourceResource, $destinationResource);
 
         // done copying and return the path

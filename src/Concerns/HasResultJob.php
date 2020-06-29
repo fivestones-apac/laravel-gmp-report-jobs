@@ -29,6 +29,19 @@ trait HasResultJob
     protected $resultJobQueue = 'default';
 
     /**
+     * Setter for result job arguments
+     *
+     * @param  array $arguments
+     * @return object
+     */
+    public function setResultJobArguments(array $arguments = []): self
+    {
+        $this->resultJobArguments = $arguments;
+
+        return $this;
+    }
+
+    /**
      * Setter for result job class name
      *
      * @param  string $className
