@@ -2,7 +2,6 @@
 
 namespace FiveStones\GmpReporting;
 
-use Exception;
 use FiveStones\GmpReporting\Jobs\Dv360SdfAwait;
 use Google\Cloud\Core\ExponentialBackoff;
 use GuzzleHttp\Psr7\StreamWrapper;
