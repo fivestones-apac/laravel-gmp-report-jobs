@@ -4,11 +4,12 @@ namespace FiveStones\GmpReporting;
 
 use FiveStones\GmpReporting\Jobs\DbmReportAwait;
 use Google\Cloud\Core\ExponentialBackoff;
-use Google_Service_DoubleClickBidManager;
-use Google_Service_DoubleClickBidManager_Report;
-use Google_Service_DoubleClickBidManager_Resource_Queries;
-use Google_Service_DoubleClickBidManager_Query;
-use Google_Service_Exception;
+use Google\Service\DoubleClickBidManager;
+use Google\Service\DoubleClickBidManager\Query as DoubleClickBidManagerQuery;
+use Google\Service\DoubleClickBidManager\Report as DoubleClickBidManagerReport;
+use Google\Service\DoubleClickBidManager\RunQueryRequest as DoubleClickBidManagerRunQueryRequest;
+use Google\Service\DoubleClickBidManager\Resource\Queries as DoubleClickBidManagerQueries;
+use Google\Service\Exception as GoogleException;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Stream;
 use GuzzleHttp\Psr7\StreamWrapper;
@@ -16,31 +17,31 @@ use RuntimeException;
 
 class DbmReport
 {
-    use Concerns\HasAwaitJob,
-        Concerns\HasGoogleClient,
-        Concerns\HasResultJob;
+    use Concerns\HasAwaitJob;
+    use Concerns\HasGoogleClient;
+    use Concerns\HasResultJob;
 
     /**
      * DBM query
      *
-     * @var  \Google_Service_DoubleClickBidManager_Query
+     * @var  \Google\Service\DoubleClickBidManager\Query
      */
     protected $query;
 
     /**
      * DBM report
      *
-     * @var  \Google_Service_DoubleClickBidManager_Report
+     * @var  \Google\Service\DoubleClickBidManager\Report
      */
     protected $report;
 
     /**
      * Setter for DBM query
      *
-     * @param  \Google_Service_DoubleClickBidManager_Query $query
+     * @param  \Google\Service\DoubleClickBidManager\Query $query
      * @return \FiveStones\GmpReporting\DbmReport
      */
-    public function setQuery(Google_Service_DoubleClickBidManager_Query $query): self
+    public function setQuery(DoubleClickBidManagerQuery $query): self
     {
         $this->query = $query;
 
@@ -50,10 +51,10 @@ class DbmReport
     /**
      * Setter for DBM report
      *
-     * @param  \Google_Service_DoubleClickBidManager_Report $report
+     * @param  \Google\Service\DoubleClickBidManager\Report $report
      * @return \FiveStones\GmpReporting\DbmReport
      */
-    public function setReport(Google_Service_DoubleClickBidManager_Report $report): self
+    public function setReport(DoubleClickBidManagerReport $report): self
     {
         $this->report = $report;
 
@@ -67,12 +68,12 @@ class DbmReport
      */
     public function run(): void
     {
-        if (!($this->query instanceof Google_Service_DoubleClickBidManager_Query)) {
+        if (!($this->query instanceof DoubleClickBidManagerQuery)) {
             throw new RuntimeException('DBM query object is not provided');
         }
 
         $client = $this->getGoogleClient();
-        $dbmService = new Google_Service_DoubleClickBidManager($client);
+        $dbmService = new DoubleClickBidManager($client);
         $queriesService = $dbmService->queries;
 
         $backoff = new ExponentialBackoff;
@@ -80,19 +81,25 @@ class DbmReport
             $queryCreated = null;
 
             try {
-                $queryCreated = $queriesService->createquery($this->query);
-            } catch (Google_Service_Exception $e) {
+                $queryCreated = $queriesService->create($this->query);
+            } catch (GoogleException $e) {
                 // since the DBM API usually response a 503 error but the query is actually created,
                 // we would search for the created query and continue our process instead of retry the createquery()
                 $queryCreated = $this->searchForCreatedQuery($queriesService);
 
-                if (($queryCreated instanceof Google_Service_DoubleClickBidManager_Query) !== true) {
+                if (($queryCreated instanceof DoubleClickBidManagerQuery) !== true) {
                     throw $e;
                 }
             }
 
-            if ($queryCreated instanceof Google_Service_DoubleClickBidManager_Query) {
+            if ($queryCreated instanceof DoubleClickBidManagerQuery) {
                 $this->query = $queryCreated;
+
+                $queriesService->run(
+                    $this->query->getQueryId(),
+                    new DoubleClickBidManagerRunQueryRequest,
+                    ['synchronous' => false],
+                );   
             }
         });
 
@@ -113,18 +120,16 @@ class DbmReport
     /**
      * Fetch queries list to see whether the query is actually created or not
      *
-     * @param  \Google_Service_DoubleClickBidManager_Resource_Queries $queriesService
-     * @return \Google_Service_DoubleClickBidManager_Query
+     * @param  \Google\Service\DoubleClickBidManager\Resource\Queries $queriesService
+     * @return \Google\Service\DoubleClickBidManager\Query
      */
-    protected function searchForCreatedQuery(
-        Google_Service_DoubleClickBidManager_Resource_Queries $queriesService
-    ): ?Google_Service_DoubleClickBidManager_Query {
-        // expect Google_Service_DoubleClickBidManager_QueryMetadata
+    protected function searchForCreatedQuery(DoubleClickBidManagerQueries $queriesService): ?DoubleClickBidManagerQuery {
+        // expect Google\Service\DoubleClickBidManager\QueryMetadata
         $targetQueryMetadata = $this->query->getMetadata();
         $targetQueryTitle = $targetQueryMetadata->getTitle();
 
-        // expect Google_Service_DoubleClickBidManager_ListQueriesResponse
-        $response = $queriesService->listqueries();
+        // expect Google\Service\DoubleClickBidManager\ListQueriesResponse
+        $response = $queriesService->listQueries();
         $queries = $response->getQueries();
 
         foreach ($queries as $query) {
@@ -146,11 +151,11 @@ class DbmReport
      */
     public function download(): string
     {
-        if (!($this->report instanceof Google_Service_DoubleClickBidManager_Report)) {
+        if (!($this->report instanceof DoubleClickBidManagerReport)) {
             throw new RuntimeException('DBM report object is not provided');
         }
 
-        // expect Google_Service_DoubleClickBidManager_ReportMetadata
+        // expect DoubleClickBidManagerReportMetadata
         $reportMetadata = $this->report->getMetadata();
         $downloadPath = $reportMetadata->getGoogleCloudStoragePath();
 

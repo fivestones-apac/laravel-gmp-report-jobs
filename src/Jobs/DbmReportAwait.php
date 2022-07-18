@@ -6,12 +6,10 @@ use FiveStones\GmpReporting\Concerns\Awaitable;
 use FiveStones\GmpReporting\Concerns\HasGoogleClient;
 use FiveStones\GmpReporting\Concerns\HasResultJob;
 use Google\Cloud\Core\ExponentialBackoff;
-use Google_Client;
-use Google_Service_DisplayVideo;
-use Google_Service_DoubleClickBidManager;
-use Google_Service_DoubleClickBidManager_Query;
-use Google_Service_DoubleClickBidManager_Report;
-use Google_Service_DoubleClickBidManager_ReportFailure;
+use Google\Service\DoubleClickBidManager;
+use Google\Service\DoubleClickBidManager\Query as DoubleClickBidManagerQuery;
+use Google\Service\DoubleClickBidManager\Report as DoubleClickBidManagerReport;
+use Google\Service\DoubleClickBidManager\ReportFailure as DoubleClickBidManagerReportFailure;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
@@ -22,13 +20,13 @@ use RuntimeException;
 
 class DbmReportAwait implements ShouldQueue
 {
-    use Dispatchable,
-        InteractsWithQueue,
-        Queueable,
-        SerializesModels,
-        Awaitable,
-        HasGoogleClient,
-        HasResultJob;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
+    use Awaitable;
+    use HasGoogleClient;
+    use HasResultJob;
 
     /**
      * The number of times the job may be attempted.
@@ -47,18 +45,18 @@ class DbmReportAwait implements ShouldQueue
     /**
      * DBM report query object
      *
-     * @var  \Google_Service_DoubleClickBidManager_Query
+     * @var  \Google\Service\DoubleClickBidManager\Query
      */
     protected $query;
 
     /**
      * Create a new job instance.
      *
-     * @param  \Google_Service_DoubleClickBidManager_Query $query
+     * @param  \Google\Service\DoubleClickBidManager\Query $query
      * @return void
      */
     public function __construct(
-        Google_Service_DoubleClickBidManager_Query $query,
+        DoubleClickBidManagerQuery $query,
         // defined in Concerns\HasGoogleClient
         ?array $googleClientAccessToken,
         ?Model $googleApiTokenModel,
@@ -91,28 +89,28 @@ class DbmReportAwait implements ShouldQueue
     {
         $client = $this->getGoogleClient();
         $backoff = new ExponentialBackoff;
-        $dbmService = new Google_Service_DoubleClickBidManager($client);
-        $reportsService = $dbmService->reports;
+        $dbmService = new DoubleClickBidManager($client);
+        $reportsService = $dbmService->queries_reports;
 
-        // expect Google_Service_DoubleClickBidManager_ListReportsResponse
+        // expect Google\Service\DoubleClickBidManager\ListReportsResponse
         $listReportsResponse = null;
 
         $backoff->execute(function () use ($reportsService, &$listReportsResponse) {
-            $listReportsResponse = $reportsService->listreports($this->query->getQueryId());
+            $listReportsResponse = $reportsService->listQueriesReports($this->query->getQueryId());
         });
 
-        // extract the latest report object, i.e. Google_Service_DoubleClickBidManager_Report
+        // extract the latest report object, i.e. Google\Service\DoubleClickBidManager\Report
         $reports = collect($listReportsResponse->getReports());
         $latestReport = $reports->last();
 
-        if (!($latestReport instanceof Google_Service_DoubleClickBidManager_Report)) {
+        if (!($latestReport instanceof DoubleClickBidManagerReport)) {
             throw new RuntimeException('No report in the query');
         }
 
-        // expect Google_Service_DoubleClickBidManager_ReportMetadata
+        // expect Google\Service\DoubleClickBidManager\ReportMetadata
         $reportMetadata = $latestReport->getMetadata();
 
-        // expect Google_Service_DoubleClickBidManager_ReportStatus
+        // expect Google\Service\DoubleClickBidManager\ReportStatus
         $reportStatus = $reportMetadata->getStatus();
 
         // use the state of the report to determine the next step
@@ -123,10 +121,10 @@ class DbmReportAwait implements ShouldQueue
                 break;
 
             case 'FAILED':
-                // expect Google_Service_DoubleClickBidManager_ReportFailure
+                // expect Google\Service\DoubleClickBidManager\ReportFailure
                 $failure = $reportStatus->getFailure();
 
-                if ($failure instanceof Google_Service_DoubleClickBidManager_ReportFailure) {
+                if ($failure instanceof DoubleClickBidManagerReportFailure) {
                     throw new RuntimeException('Report failed with code ' . $failure->getErrorCode());
                 } else {
                     throw new RuntimeException('Report failed');

@@ -2,13 +2,13 @@
 
 namespace FiveStones\GmpReporting\Concerns;
 
-use Google_Client;
+use Google\Client;
 use Illuminate\Database\Eloquent\Model;
 
 trait HasGoogleClient
 {
     /**
-     * @var  \Google_Client
+     * @var  \Google\Client
      */
     protected $googleClient;
 
@@ -50,9 +50,9 @@ trait HasGoogleClient
     /**
      * Returns an initialized Google_Client with active acess token
      *
-     * @return \Google_Client|null
+     * @return \Google\Client|null
      */
-    protected function getGoogleClient(): ?Google_Client
+    protected function getGoogleClient(): ?Client
     {
         // obtain initialized client from model if class and method name are provded
         if (
@@ -62,13 +62,13 @@ trait HasGoogleClient
             $this->googleApiTokenModel = $this->googleApiTokenModel->fresh();
             $this->googleClient = $this->googleApiTokenModel->{$this->googleApiTokenModelGetClientMethod}();
         } else if (is_array($this->googleClientAccessToken)) {
-            $this->googleClient = new Google_Client;
+            $this->googleClient = new Client;
             $this->googleClient->setAccessToken($this->googleClientAccessToken);
         }
 
         // obtain a fresh access token if the existing one is expired
         if (
-            $this->googleClient instanceof Google_Client &&
+            $this->googleClient instanceof Client &&
             $this->googleClient->isAccessTokenExpired()
         ) {
             $freshAccessToken = $this->googleClient->fetchAccessTokenWithRefreshToken();

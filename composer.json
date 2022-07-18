@@ -7,12 +7,12 @@
         {
             "name": "Peter Lam",
             "email": "peter@fivestones.net",
-            "role": "Solution Engineer"
+            "role": "Solutions Engineer"
         }
     ],
     "require": {
-        "google/apiclient": "^2.7",
-        "google/cloud-core": "^1.37"
+        "google/apiclient": "^2.12.6",
+        "google/cloud-core": "^1.46.0"
     },
     "require-dev": {
         "orchestra/testbench": "^6.0",
